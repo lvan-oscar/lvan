@@ -26,7 +26,7 @@ jobs:
         python --version
         
         echo "===== Simulated CUDA Test ====="
-        python -c "import time; import platform; import sys;
+        python -c "import time; import platform; import sys
 print('='*50)
 print(f'Python version: {sys.version}')
 print(f'Operating System: {platform.system()} {platform.release()}')
