@@ -1,0 +1,5 @@
+# CUDA 12.1 for RTX 40 series
+torch==2.1.0+cu121
+torchaudio==2.1.0+cu121
+librosa
+numpy
