@@ -1,0 +1,17 @@
+name: CUDA Test
+on: [push]
+
+jobs:
+  cuda-test:
+    runs-on: ubuntu-latest
+    container:
+      image: nvcr.io/nvidia/cuda:12.1.1-base
+    steps:
+    - name: 下载代码
+      uses: actions/checkout@v4
+      
+    - name: 安装依赖
+      run: pip install -r requirements.txt
+      
+    - name: 测试显卡
+      run: python gpu_test.py
