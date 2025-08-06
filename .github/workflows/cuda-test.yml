@@ -1,52 +1,32 @@
-name: Debug CUDA Test
+name: Fixed CUDA Test
 on: [push]
 
 jobs:
-  cuda-debug:
+  cuda-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 15
+    
+    container:
+      image: registry.cn-hangzhou.aliyuncs.com/paddlepaddle/paddle:latest-cuda12.1.1
+      options: --shm-size=1g --pull-timeout 600
+      
     steps:
-    - name: 检查系统状态
+    - name: 下载代码
+      uses: actions/checkout@v4
+      
+    - name: 验证路径
+      run: echo "当前路径: $PWD, 内容: $(ls)"
+      
+    - name: 安装依赖
       run: |
-        echo "===== 开始调试 ====="
-        date
-        echo "GitHub Runner: ${{ runner.os }}"
-        echo "===== 硬盘空间 ====="
-        df -h
-        echo "===== 内存使用 ====="
-        free -h
-        echo "===== Docker信息 ====="
-        docker info
-
-    - name: 分步拉取镜像
-      run: |
-        echo "尝试阿里云镜像..."
-        docker pull registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base && echo "阿里云成功" || \
-        (echo "阿里云失败"; docker pull nvidia/cuda:12.1.1-base && echo "Docker Hub成功" || \
-        (echo "全部失败"; docker pull ubuntu:20.04))
+        pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install torch==2.1.0 torchaudio librosa numpy
         
-        echo "===== 现有镜像 ====="
-        docker images
-
-    - name: 验证镜像功能
+    - name: 运行测试
       run: |
-        echo "===== 测试基础命令 ====="
-        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base echo "Hello CUDA" || true
+        echo "===== CUDA设备检测 ====="
+        python -c "import torch; print(f'CUDA可用: {torch.cuda.is_available()}')"
+        python -c "import torch; print(f'设备名称: {torch.cuda.get_device_name(0)}')"
         
-        echo "===== 测试CUDA命令 ====="
-        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base nvidia-smi || \
-        echo "nvidia-smi不可用"
-        
-        echo "===== 测试Python环境 ====="
-        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base python -c "import torch; print(torch.__version__)" || \
-        echo "Python测试失败"
-
-    - name: 主测试流程
-      if: success() || failure()  # 无论前面成功与否都运行
-      run: |
-        echo "===== 主测试开始 ====="
-        git clone https://github.com/${{ github.repository }}.git
-        cd ${{ github.repository_owner }}
-        pip install -r requirements.txt
+        echo "===== 运行自定义测试 ====="
         python gpu_test.py
