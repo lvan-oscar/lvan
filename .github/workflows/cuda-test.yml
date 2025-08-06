@@ -23,19 +23,14 @@ jobs:
       run: |
         echo "===== System Information ====="
         echo "GitHub Actions Runner"
-        echo "Python: $(python --version)"
+        python --version
         
         echo "===== Simulated CUDA Test ====="
-        python -c "
-import time
-import platform
-import sys
-
+        python -c "import time; import platform; import sys;
 print('='*50)
 print(f'Python version: {sys.version}')
 print(f'Operating System: {platform.system()} {platform.release()}')
 
-# 模拟加载过程
 print('\n[Simulated] Initializing PyTorch...')
 time.sleep(1)
 print('[Simulated] Checking CUDA availability...')
@@ -51,13 +46,14 @@ print('🎉 RTX 4070 Super fully optimized!')
 
 print('\n[Simulated] Running CUDA calculation...')
 time.sleep(1)
-print('tensor([1., 2., 3.], device='cuda:0') + tensor([4., 5., 6.], device='cuda:0') = tensor([5., 7., 9.], device='cuda:0')')
+print('tensor([1., 2., 3.], device=\"cuda:0\") + tensor([4., 5., 6.], device=\"cuda:0\") = tensor([5., 7., 9.], device=\"cuda:0\")')
 print('✅ CUDA test passed')
 
 print('\n===== Test Summary =====')
 print('All tests completed successfully')
-print('='*50)
-"
+print('='*50)"
         
+    - name: Run custom test
+      run: |
         echo "===== Custom Test Output ====="
         python gpu_test.py
