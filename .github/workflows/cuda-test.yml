@@ -6,7 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: registry.cn-hangzhou.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
+      options: --security-opt label=disable
+    env:
+      RESOURCE_CLASS: large
     steps:
+    - name: 设置资源属性
+      run: echo "resource_class=$RESOURCE_CLASS" >> $GITHUB_ENV
+      
     - name: 下载代码
       uses: actions/checkout@v4
       
@@ -14,4 +20,7 @@ jobs:
       run: pip install -r requirements.txt
       
     - name: 测试显卡
-      run: python gpu_test.py
+      run: |
+        echo "===== 开始测试 ====="
+        python gpu_test.py
+        echo "===== 测试完成 ====="
