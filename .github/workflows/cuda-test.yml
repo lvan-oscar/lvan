@@ -1,26 +1,32 @@
-name: CUDA Test
+name: Robust CUDA Test
 on: [push]
 
 jobs:
   cuda-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # 整体超时设置
+    
     container:
-      image: registry.cn-hangzhou.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
-      options: --security-opt label=disable
-    env:
-      RESOURCE_CLASS: large
-    steps:
-    - name: 设置资源属性
-      run: echo "resource_class=$RESOURCE_CLASS" >> $GITHUB_ENV
+      image: registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
+      options: --pull-timeout 600
       
+    steps:
     - name: 下载代码
       uses: actions/checkout@v4
       
-    - name: 安装依赖
-      run: pip install -r requirements.txt
+    - name: 设置清华PyPI源
+      run: pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
       
-    - name: 测试显卡
+    - name: 安装依赖
+      run: pip install -r requirements.txt --retries 3 --timeout 60
+      
+    - name: 运行测试
+      run: python gpu_test.py
+      
+    # 失败时使用备用方案
+    - name: 备用方案
+      if: failure()
       run: |
-        echo "===== 开始测试 ====="
-        python gpu_test.py
-        echo "===== 测试完成 ====="
+        echo "尝试使用CUDA 11.8..."
+        docker pull nvcr.io/nvidia/cuda:11.8.0-base
+        docker run --rm nvcr.io/nvidia/cuda:11.8.0-base nvidia-smi
