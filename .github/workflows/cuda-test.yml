@@ -1,18 +1,25 @@
-name: Minimal CUDA Test
+name: CUDA Test
 on: [push]
 
 jobs:
   cuda-test:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       
-      - name: Install PyTorch
-        run: pip install torch==2.1.0
-      
-      - name: Test CUDA availability
-        run: |
-          echo "===== Testing CUDA ====="
-          python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-          python -c "import torch; print(f'Device count: {torch.cuda.device_count()}')"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'  # PyTorch 2.1 支持的最高Python版本
+        
+    - name: Install PyTorch for CUDA 12.1
+      run: |
+        pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 \
+          --index-url https://download.pytorch.org/whl/cu121
+        
+    - name: Test CUDA availability
+      run: |
+        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+        python -c "import torch; print(f'Device name: {torch.cuda.get_device_name(0)}')"
