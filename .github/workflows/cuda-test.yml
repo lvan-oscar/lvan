@@ -1,32 +1,42 @@
-name: Robust CUDA Test
+name: CUDA Test
 on: [push]
 
 jobs:
   cuda-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 整体超时设置
     
+    # 使用国内镜像源 + 超时设置
     container:
       image: registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
-      options: --pull-timeout 600
+      options: --network=host --pull-timeout 600
+      
+    # 添加重试机制
+    strategy:
+      max-attempts: 3
       
     steps:
+    - name: 配置环境
+      run: |
+        echo "===== 设置镜像拉取超时 ====="
+        docker pull --timeout 600 registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base || true
+        
     - name: 下载代码
       uses: actions/checkout@v4
       
-    - name: 设置清华PyPI源
-      run: pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-      
     - name: 安装依赖
-      run: pip install -r requirements.txt --retries 3 --timeout 60
-      
-    - name: 运行测试
-      run: python gpu_test.py
-      
-    # 失败时使用备用方案
-    - name: 备用方案
+      run: |
+        pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install -r requirements.txt --timeout 60
+        
+    - name: 测试显卡
+      run: |
+        echo "===== 开始CUDA测试 ====="
+        python gpu_test.py
+        echo "===== 测试完成 ====="
+        
+    # 添加失败通知
+    - name: 失败通知
       if: failure()
       run: |
-        echo "尝试使用CUDA 11.8..."
-        docker pull nvcr.io/nvidia/cuda:11.8.0-base
-        docker run --rm nvcr.io/nvidia/cuda:11.8.0-base nvidia-smi
+        echo "❌ Docker镜像拉取失败，请检查镜像源配置"
+        echo "推荐尝试：registry.cn-shanghai.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base"
