@@ -7,7 +7,7 @@ jobs:
     timeout-minutes: 30 
     
     container:
-      image: registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
+      image: nvcr.io/nvidia/cuda:12.1.1-base
       options: --pull-timeout 600
       
     steps:
