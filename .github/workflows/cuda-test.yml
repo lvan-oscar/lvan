@@ -4,14 +4,33 @@ on: [push]
 jobs:
   cuda-test:
     runs-on: ubuntu-latest
-    container:
-      image: nvcr.io/nvidia/cuda:12.1.1-base
+    
     steps:
+    - name: 拉取Docker镜像
+      run: |
+        for i in {1..3}; do
+          docker pull registry.cn-hangzhou.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base && break
+          echo "重试 $i/3..."
+          sleep 5
+        done
+        
+    - name: 启动CUDA容器
+      run: |
+        docker run -itd \
+          --name cuda-test \
+          registry.cn-hangzhou.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base
+        
     - name: 下载代码
       uses: actions/checkout@v4
       
+    - name: 复制文件到容器
+      run: |
+        docker cp . cuda-test:/workspace
+        
     - name: 安装依赖
-      run: pip install -r requirements.txt
-      
+      run: |
+        docker exec cuda-test pip install -r /workspace/requirements.txt
+        
     - name: 测试显卡
-      run: python gpu_test.py
+      run: |
+        docker exec cuda-test python /workspace/gpu_test.py
