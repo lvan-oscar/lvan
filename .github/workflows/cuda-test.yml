@@ -5,6 +5,14 @@ jobs:
   cuda-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - run: pip install torch==2.1.0
-    - run: python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install PyTorch
+        run: pip install torch==2.1.0
+      
+      - name: Test CUDA availability
+        run: |
+          echo "===== Testing CUDA ====="
+          python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+          python -c "import torch; print(f'Device count: {torch.cuda.device_count()}')"
