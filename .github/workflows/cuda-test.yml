@@ -1,31 +1,52 @@
-name: Robust CUDA Test
+name: Debug CUDA Test
 on: [push]
 
 jobs:
-  cuda-test:
+  cuda-debug:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 
-    
-    container:
-      image: nvcr.io/nvidia/cuda:12.1.1-base
-      options: --pull-timeout 600
-      
+    timeout-minutes: 30
+
     steps:
-    - name: 下载代码
-      uses: actions/checkout@v4
-      
-    - name: 设置清华PyPI源
-      run: pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-      
-    - name: 安装依赖
-      run: pip install -r requirements.txt --retries 3 --timeout 60
-      
-    - name: 运行测试
-      run: python gpu_test.py
-      
-    - name: 备用方案
-      if: failure()
+    - name: 检查系统状态
       run: |
-        echo "尝试使用CUDA 11.8..."
-        docker pull nvcr.io/nvidia/cuda:11.8.0-base
-        docker run --rm nvcr.io/nvidia/cuda:11.8.0-base nvidia-smi
+        echo "===== 开始调试 ====="
+        date
+        echo "GitHub Runner: ${{ runner.os }}"
+        echo "===== 硬盘空间 ====="
+        df -h
+        echo "===== 内存使用 ====="
+        free -h
+        echo "===== Docker信息 ====="
+        docker info
+
+    - name: 分步拉取镜像
+      run: |
+        echo "尝试阿里云镜像..."
+        docker pull registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base && echo "阿里云成功" || \
+        (echo "阿里云失败"; docker pull nvidia/cuda:12.1.1-base && echo "Docker Hub成功" || \
+        (echo "全部失败"; docker pull ubuntu:20.04))
+        
+        echo "===== 现有镜像 ====="
+        docker images
+
+    - name: 验证镜像功能
+      run: |
+        echo "===== 测试基础命令 ====="
+        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base echo "Hello CUDA" || true
+        
+        echo "===== 测试CUDA命令 ====="
+        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base nvidia-smi || \
+        echo "nvidia-smi不可用"
+        
+        echo "===== 测试Python环境 ====="
+        docker run --rm registry.cn-beijing.aliyuncs.com/nvidia_cuda/cuda:12.1.1-base python -c "import torch; print(torch.__version__)" || \
+        echo "Python测试失败"
+
+    - name: 主测试流程
+      if: success() || failure()  # 无论前面成功与否都运行
+      run: |
+        echo "===== 主测试开始 ====="
+        git clone https://github.com/${{ github.repository }}.git
+        cd ${{ github.repository_owner }}
+        pip install -r requirements.txt
+        python gpu_test.py
