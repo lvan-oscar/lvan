@@ -1,0 +1,2 @@
+resource_class: large 
+docker_default_platform: linux/amd64 
