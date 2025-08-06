@@ -11,22 +11,29 @@ jobs:
       options: --shm-size=1g --pull-timeout 600
       
     steps:
-    - name: 下载代码
+    # 步骤1：下载代码
+    - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: 验证路径
-      run: echo "当前路径: $PWD, 内容: $(ls)"
+    # 步骤2：验证路径（这是关键位置）
+    - name: Verify directory
+      run: |
+        echo "Current path: $PWD"
+        echo "Directory contents:"
+        ls -la
       
-    - name: 安装依赖
+    # 步骤3：安装依赖
+    - name: Install dependencies
       run: |
         pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
         pip install torch==2.1.0 torchaudio librosa numpy
         
-    - name: 运行测试
+    # 步骤4：运行测试
+    - name: Run tests
       run: |
-        echo "===== CUDA设备检测 ====="
-        python -c "import torch; print(f'CUDA可用: {torch.cuda.is_available()}')"
-        python -c "import torch; print(f'设备名称: {torch.cuda.get_device_name(0)}')"
+        echo "===== CUDA device detection ====="
+        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+        python -c "import torch; print(f'Device name: {torch.cuda.get_device_name(0)}')"
         
-        echo "===== 运行自定义测试 ====="
+        echo "===== Running custom test ====="
         python gpu_test.py
