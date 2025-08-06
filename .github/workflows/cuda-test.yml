@@ -9,7 +9,7 @@ jobs:
     - name: 拉取Docker镜像
       run: |
         for i in {1..3}; do
-          docker pull image: nvidia/cuda:12.1.1-base  # Docker Hub官方镜像 && break
+          docker pull image: nvidia/cuda:12.1.1-base && break
           echo "重试 $i/3..."
           sleep 5
         done
